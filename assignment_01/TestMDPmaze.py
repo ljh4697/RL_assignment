@@ -1,5 +1,5 @@
 import numpy as np
-import MDP
+from MDP import MDP
 
 ''' Construct a simple maze MDP
 
@@ -298,9 +298,9 @@ R[:,16] = 0;    # end state
 discount = 0.95
         
 # MDP object
-mdp = MDP.MDP(T,R,discount)
+mdp = MDP(T,R,discount)
 
 '''Test each procedure'''
 [V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates),tolerance=0.01)
-[policy,V,nIterations] = mdp.policyIteration(np.zeros(mdp.nStates,dtype=int))
-[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)
+#[policy,V,nIterations] = mdp.policyIteration(np.zeros(mdp.nStates,dtype=int))
+#[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)

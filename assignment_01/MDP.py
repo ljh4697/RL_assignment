@@ -1,6 +1,6 @@
 import numpy as np
 
-class MDP:
+class MDP(object):
     '''A simple MDP class.  It includes the following members'''
 
     def __init__(self,T,R,discount):
@@ -25,7 +25,7 @@ class MDP:
         self.R = R
         assert 0 <= discount < 1, "Invalid discount factor: it should be in [0,1)"
         self.discount = discount
-        
+        self.V = np.zeros(self.nStates)
     def valueIteration(self,initialV,nIterations=np.inf,tolerance=0.01):
         '''Value iteration procedure
         V <-- max_a R^a + gamma T^a V
@@ -42,15 +42,45 @@ class MDP:
         
         # temporary values to ensure that the code compiles until this
         # function is coded
-        V = np.zeros(self.nStates)
+        discount = self.discount
+        V = self.V
+        R = self.R
         iterId = 0
         epsilon = 0
+        
+        while(iterId < nIterations):
+            next_V = np.zeros(self.nStates)
+
+            for s in range(self.nStates):
+                max_V = [0]
+                
+                for a in range(self.nActions):
+                    for n_s in range(len(T[a][s])):
+                        if T[a][s][n_s] > 0:
+                            max_V.append(R[a][n_s] + discount * T[a][s][n_s] * V[n_s])
+                next_V[s] = max(max_V)
+            
+
+            
+
+
+            epsilon = np.linalg.norm(next_V - V)
+            V = next_V
+            iterId += 1
+            if epsilon <= tolerance:
+                break
+
+
+
+        
+
         
         return [V,iterId,epsilon]
 
     def extractPolicy(self,V):
         '''Procedure to extract a policy from a value function
         pi <-- argmax_a R^a + gamma T^a V
+        
 
         Inputs:
         V -- Value function: array of |S| entries
@@ -151,4 +181,16 @@ class MDP:
         epsilon = 0
 
         return [policy,V,iterId,epsilon]
-        
+
+if __name__ == '__main__':
+    print('hello python')
+    T = np.array([[[0.5,0.5,0,0],[0,1,0,0],[0.5,0.5,0,0],[0,1,0,0]],[[1,0,0,0],[0.5,0,0,0.5],[0.5,0,0.5,0],[0,0,0.5,0.5]]])
+    # Reward function: |A| x |S| array
+    R = np.array([[0,0,10,10],[0,0,10,10]])
+    # Discount factor: scalar in [0,1)
+    discount = 0.9        
+    # MDP object
+    mdp = MDP(T,R,discount)
+    
+    [V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates))
+    print([V,nIterations,epsilon])
