@@ -1,5 +1,6 @@
 import numpy as np
-from MDP import MDP
+import MDP
+from graphic import visualize_maze
 
 ''' Construct a simple maze MDP
 
@@ -298,9 +299,14 @@ R[:,16] = 0;    # end state
 discount = 0.95
         
 # MDP object
-mdp = MDP(T,R,discount)
+mdp = MDP.MDP(T,R,discount)
 
 '''Test each procedure'''
-[V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates),tolerance=0.01)
+[V,nIterations,epsilon,optimal_p] = mdp.valueIteration(initialV=np.zeros(mdp.nStates),tolerance=0.01)
 #[policy,V,nIterations] = mdp.policyIteration(np.zeros(mdp.nStates,dtype=int))
 #[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)
+print([V,nIterations,epsilon,optimal_p])
+
+result = visualize_maze(V, R, optimal_p)
+result.draw_maze() #최대 value f 이 아닌 최대 q f 으로 화살표를 그려야됨!
+
