@@ -53,12 +53,17 @@ class MDP(object):
             next_V = np.zeros(self.nStates)
 
             for s in range(self.nStates):
-                max_V = [0]
+                max_V = []
                 
                 for a in range(self.nActions):
+                    R_gamma_T_V = []
                     for n_s in range(len(T[a][s])):
+                        
+                        
                         if T[a][s][n_s] > 0:
-                            max_V.append(R[a][n_s] + discount * T[a][s][n_s] * V[n_s])
+                            R_gamma_T_V.append(R[a][s] + discount * T[a][s][n_s] * V[n_s])
+                            
+                    max_V.append(max(R_gamma_T_V))
                 next_V[s] = max(max_V)
             
 
@@ -69,34 +74,19 @@ class MDP(object):
                 break
 
 
-        optimal_p =[[0] for _ in range(self.nStates)]
-
-
-        for s in range(self.nStates):
-            q_f = [0] * self.nActions
-            q_f = np.array(q_f)
-            for a in range(self.nActions):
-                max_q = []
-                for n_s in range(len(T[a][s])):
-                    if T[a][s][n_s] > 0:
-                        max_q.append(R[a][n_s] + discount * T[a][s][n_s] * V[n_s])
-                q_f[a] = max(max_q)
-            max_idx_lsit = np.argwhere(q_f == np.amax(q_f))
-            optimal_p[s] = max_idx_lsit.flatten().tolist()
-
-
-                
 
 
 
 
 
         
-
-        
-        return [V,iterId,epsilon,optimal_p]
+        return [V,iterId,epsilon]
 
     def extractPolicy(self,V):
+
+        discount = self.discount
+        T = self.T
+        R = self.R
         '''Procedure to extract a policy from a value function
         pi <-- argmax_a R^a + gamma T^a V
         
@@ -106,14 +96,38 @@ class MDP(object):
 
         Output:
         policy -- Policy: array of |S| entries'''
+        policy = [[0] for _ in range(self.nStates)]
 
+        for s in range(self.nStates):
+            q_f = [0] * self.nActions
+            q_f = np.array(q_f)
+            for a in range(self.nActions):
+
+                R_gamma_T_V = []
+
+                for n_s in range(len(T[a][s])):
+                    if T[a][s][n_s] > 0:
+                        R_gamma_T_V.append(R[a][s] + discount * T[a][s][n_s] * V[n_s])
+                        
+
+
+                q_f[a] = (max(R_gamma_T_V))
+                if s == 7:
+                    print(a, q_f[a])
+            max_idx_lsit = np.argwhere(q_f == np.amax(q_f))
+            policy[s] = max_idx_lsit.flatten().tolist()
         # temporary values to ensure that the code compiles until this
         # function is coded
-        policy = np.zeros(self.nStates)
 
         return policy 
 
     def evaluatePolicy(self,policy):
+
+        discount = self.discount
+        T = self.T
+        R = self.R
+
+        V = np.zeros(self.nStates)
         '''Evaluate a policy by solving a system of linear equations
         V^pi = R^pi + gamma T^pi V^pi
 
@@ -122,10 +136,19 @@ class MDP(object):
 
         Ouput:
         V -- Value function: array of |S| entries'''
+        for s in range(self.nStates):
+            pi_s = np.random.choice(policy[s])
+            for n_s in range(self.nStates):
+                if T[pi_s][s][n_s] > 0:
+                    V[s] = R[pi_s][n_s] 
+            
 
         # temporary values to ensure that the code compiles until this
         # function is coded
         V = np.zeros(self.nStates)
+
+
+        
 
         return V
         
