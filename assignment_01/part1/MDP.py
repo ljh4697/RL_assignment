@@ -97,7 +97,7 @@ class MDP(object):
         Output:
         policy -- Policy: array of |S| entries'''
         policy = [[0] for _ in range(self.nStates)]
-
+        #policy = np.zeros([self.nStates, 1])
         for s in range(self.nStates):
             q_f = [0] * self.nActions
             q_f = np.array(q_f)
@@ -116,6 +116,8 @@ class MDP(object):
                     print(a, q_f[a])
             max_idx_lsit = np.argwhere(q_f == np.amax(q_f))
             policy[s] = max_idx_lsit.flatten().tolist()
+            
+        
         # temporary values to ensure that the code compiles until this
         # function is coded
 
@@ -137,18 +139,30 @@ class MDP(object):
         Ouput:
         V -- Value function: array of |S| entries'''
         for s in range(self.nStates):
-            pi_s = np.random.choice(policy[s])
-            for n_s in range(self.nStates):
-                if T[pi_s][s][n_s] > 0:
-                    V[s] = R[pi_s][n_s] 
+            pi_a_s = policy[s]
             
+            if type(pi_a_s) ==list and len(pi_a_s) >= 2:
+                for a in pi_a_s:
+                    sigma_gamma_Pr_V = 0
+                    for n_s in range(self.nStates):
+                        if T[a][s][n_s] > 0:
+                            sigma_gamma_Pr_V += discount* T[a][s][n_s] * self.V[n_s]
+                    V[s] += (1/len(pi_a_s))*(R[a][s] + sigma_gamma_Pr_V)
+                continue
+            else:
+            #for a, pa in enumerate(pi_a_s):
+            #    if pa > 0:
+                if type(pi_a_s) == list:
+                    pi_a_s = pi_a_s[0]
+                for n_s in range(self.nStates):
+                    if T[pi_a_s][s][n_s] > 0:
+                        V[s] +=  discount* T[pi_a_s][s][n_s] * self.V[n_s]
+                V[s] += R[pi_a_s][s]
+                        
 
         # temporary values to ensure that the code compiles until this
         # function is coded
-        V = np.zeros(self.nStates)
 
-
-        
 
         return V
         
@@ -156,7 +170,7 @@ class MDP(object):
         '''Policy iteration procedure: alternate between policy
         evaluation (solve V^pi = R^pi + gamma T^pi V^pi) and policy
         improvement (pi <-- argmax_a R^a + gamma T^a V^pi).
-
+        
         Inputs:
         initialPolicy -- Initial policy: array of |S| entries
         nIterations -- limit on # of iterations: scalar (default: inf)
@@ -165,12 +179,32 @@ class MDP(object):
         policy -- Policy: array of |S| entries
         V -- Value function: array of |S| entries
         iterId -- # of iterations peformed by modified policy iteration: scalar'''
+        policy = list(initialPolicy)
+        V = np.zeros(self.nStates)
+        iterId = 0
+
+        while (iterId < nIterations):
+            iterId += 1
+
+            #evaluatepolicy
+            next_V = self.evaluatePolicy(policy)
+            print(next_V)
+            #impropolicy
+            V = next_V
+            self.V = V
+
+            next_policy = self.extractPolicy(V)
+            print(next_policy)
+            try:
+                if next_policy == policy:
+                    break
+            except:
+                pass
+            policy = next_policy
+
 
         # temporary values to ensure that the code compiles until this
         # function is coded
-        policy = np.zeros(self.nStates)
-        V = np.zeros(self.nStates)
-        iterId = 0
 
         return [policy,V,iterId]
             
