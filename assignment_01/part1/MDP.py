@@ -56,14 +56,14 @@ class MDP(object):
                 max_V = []
                 
                 for a in range(self.nActions):
-                    R_gamma_T_V = []
-                    for n_s in range(len(T[a][s])):
-                        
-                        
-                        if T[a][s][n_s] > 0:
-                            R_gamma_T_V.append(R[a][s] + discount * T[a][s][n_s] * V[n_s])
+                    sigma_gamma_Pr_V = 0
+                    sigma_gamma_Pr_V = discount * T[a][s] * V
+                    #for n_s in range(len(T[a][s])):
+                    #    
+                    #    if T[a][s][n_s] > 0:
+                    #        sigma_gamma_Pr_V += discount * T[a][s][n_s] * V[n_s]
                             
-                    max_V.append(max(R_gamma_T_V))
+                    max_V.append(R[a][s] + np.sum(sigma_gamma_Pr_V))
                 next_V[s] = max(max_V)
             
 
@@ -96,6 +96,10 @@ class MDP(object):
 
         Output:
         policy -- Policy: array of |S| entries'''
+
+        # temporary values to ensure that the code compiles until this
+        # function is coded
+
         policy = [[0] for _ in range(self.nStates)]
         #policy = np.zeros([self.nStates, 1])
         for s in range(self.nStates):
@@ -103,23 +107,20 @@ class MDP(object):
             q_f = np.array(q_f)
             for a in range(self.nActions):
 
-                R_gamma_T_V = []
+                sigma_gamma_Pr_V = 0
 
                 for n_s in range(len(T[a][s])):
                     if T[a][s][n_s] > 0:
-                        R_gamma_T_V.append(R[a][s] + discount * T[a][s][n_s] * V[n_s])
+                        sigma_gamma_Pr_V += discount * T[a][s][n_s] * V[n_s]
                         
-
-
-                q_f[a] = (max(R_gamma_T_V))
-                if s == 7:
-                    print(a, q_f[a])
+                q_f[a] = R[a][s] + sigma_gamma_Pr_V
+                #q_f[a] = (max(R_gamma_T_V))
+              
             max_idx_lsit = np.argwhere(q_f == np.amax(q_f))
             policy[s] = max_idx_lsit.flatten().tolist()
             
         
-        # temporary values to ensure that the code compiles until this
-        # function is coded
+
 
         return policy 
 
@@ -138,6 +139,11 @@ class MDP(object):
 
         Ouput:
         V -- Value function: array of |S| entries'''
+
+        # temporary values to ensure that the code compiles until this
+        # function is coded
+
+
         for s in range(self.nStates):
             pi_a_s = policy[s]
             
@@ -160,8 +166,7 @@ class MDP(object):
                 V[s] += R[pi_a_s][s]
                         
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
+
 
 
         return V
@@ -179,8 +184,12 @@ class MDP(object):
         policy -- Policy: array of |S| entries
         V -- Value function: array of |S| entries
         iterId -- # of iterations peformed by modified policy iteration: scalar'''
+
+        # temporary values to ensure that the code compiles until this
+        # function is coded
         policy = list(initialPolicy)
         V = np.zeros(self.nStates)
+        self.V = V
         iterId = 0
 
         while (iterId < nIterations):
@@ -188,13 +197,11 @@ class MDP(object):
 
             #evaluatepolicy
             next_V = self.evaluatePolicy(policy)
-            print(next_V)
             #impropolicy
             V = next_V
             self.V = V
 
             next_policy = self.extractPolicy(V)
-            print(next_policy)
             try:
                 if next_policy == policy:
                     break
@@ -203,8 +210,7 @@ class MDP(object):
             policy = next_policy
 
 
-        # temporary values to ensure that the code compiles until this
-        # function is coded
+
 
         return [policy,V,iterId]
             
@@ -225,11 +231,41 @@ class MDP(object):
 
         # temporary values to ensure that the code compiles until this
         # function is coded
-        V = np.zeros(self.nStates)
-        iterId = 0
+        next_V = np.zeros(self.nStates)
         epsilon = 0
+        T = self.T
+        R = self.R
+        discount = self.discount
 
-        return [V,iterId,epsilon]
+
+        for s in range(self.nStates):
+            pi_a_s = policy[s]
+            
+            if type(pi_a_s) ==list and len(pi_a_s) >= 2:
+                for a in pi_a_s:
+                    sigma_gamma_Pr_V = 0
+                    for n_s in range(self.nStates):
+                        if T[a][s][n_s] > 0:
+                            sigma_gamma_Pr_V += discount* T[a][s][n_s] * initialV[n_s]
+                    next_V[s] += (1/len(pi_a_s))*(R[a][s] + sigma_gamma_Pr_V)
+                continue
+            else:
+            #for a, pa in enumerate(pi_a_s):
+            #    if pa > 0:
+                if type(pi_a_s) == list:
+                    pi_a_s = pi_a_s[0]
+
+                sigma_gamma_Pr_V = 0
+
+                for n_s in range(self.nStates):
+                    if T[pi_a_s][s][n_s] > 0:
+                        sigma_gamma_Pr_V +=  discount* T[pi_a_s][s][n_s] * initialV[n_s]
+                next_V[s] += R[pi_a_s][s] + sigma_gamma_Pr_V
+
+        epsilon = np.linalg.norm(next_V - initialV)
+
+
+        return next_V
 
     def modifiedPolicyIteration(self,initialPolicy,initialV,nEvalIterations=5,nIterations=np.inf,tolerance=0.01):
         '''Modified policy iteration procedure: alternate between
@@ -251,10 +287,45 @@ class MDP(object):
 
         # temporary values to ensure that the code compiles until this
         # function is coded
-        policy = np.zeros(self.nStates)
+        k = nEvalIterations
+        policy = [0] * self.nStates
         V = np.zeros(self.nStates)
+        self.V = V
         iterId = 0
         epsilon = 0
+        T = self.T
+        R = self.R
+        discount = self.discount
+        nIterations = 10
+
+        while(iterId < nIterations):
+            # Eval : Repeat k times V^pi <-- R^pi + gamma T^pi V^pi
+            for i in range(k):
+                V = self.evaluatePolicyPartially(policy, V)
+            print(V)
+            # improve policy
+            policy = self.extractPolicy(V)
+            #print(policy)
+            # V <-- max_a R^a + gamma T^a V
+            next_V = np.zeros(self.nStates)
+            for s in range(self.nStates):
+                max_V = []
+                
+                for a in range(self.nActions):
+                    sigma_gamma_Pr_V = 0
+                    sigma_gamma_Pr_V = discount * T[a][s] * V
+                            
+                    max_V.append(R[a][s] + np.sum(sigma_gamma_Pr_V))
+                next_V[s] = max(max_V)
+
+            epsilon = np.linalg.norm(next_V - V)
+            if epsilon <= tolerance:
+                break
+            V = next_V
+            iterId+=1
+            print(epsilon)
+            print(iterId)
+
 
         return [policy,V,iterId,epsilon]
 

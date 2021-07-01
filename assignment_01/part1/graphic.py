@@ -9,11 +9,12 @@ import math
 
 class visualize_maze():
     ## this class is for  4x4 maze
-    def __init__(self, V, R, policy):
+    def __init__(self, V, R, policy, iteration):
         
         self.V = V
         self.R = R
         self.policy = policy
+        self.iteration = iteration
         
         
 
@@ -28,7 +29,7 @@ class visualize_maze():
         policy = self.policy
 
         plt.title('')
-        plt.xlabel('red = V , blue=reward')
+        plt.xlabel('red = V , blue = reward ,' + ' iteration = ' + f'{self.iteration}')
 
 
         for i in range(0,5):
@@ -59,6 +60,5 @@ class visualize_maze():
   
 
         plt.show()
-
-
+        
         return

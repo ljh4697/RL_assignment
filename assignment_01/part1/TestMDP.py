@@ -13,11 +13,11 @@ mdp = MDP.MDP(T,R,discount)
 
 
 '''Test each procedure'''
-[V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates))
-policy = mdp.extractPolicy(V)
-V = mdp.evaluatePolicy(np.array([1,0,1,0]))
+#[V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates))
+#policy = mdp.extractPolicy(V)
+#V = mdp.evaluatePolicy(np.array([1,0,1,0]))
 [policy,V,iterId] = mdp.policyIteration(np.array([0,0,0,0]))
-[V,iterId,epsilon] = mdp.evaluatePolicyPartially(np.array([1,0,1,0]),np.array([0,10,0,13]))
-[policy,V,iterId,tolerance] = mdp.modifiedPolicyIteration(np.array([1,0,1,0]),np.array([0,10,0,13]))
+#[V,iterId,epsilon] = mdp.evaluatePolicyPartially(np.array([1,0,1,0]),np.array([0,10,0,13]))
+#[policy,V,iterId,tolerance] = mdp.modifiedPolicyIteration(np.array([1,0,1,0]),np.array([0,10,0,13]))
 
 

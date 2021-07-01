@@ -301,13 +301,23 @@ discount = 0.95
 # MDP object
 mdp = MDP.MDP(T,R,discount)
 
-'''Test each procedure'''
-[V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates),tolerance=0.01)
-optimal_p = mdp.extractPolicy(V)
+#'''Test each procedure'''
+#[V,nIterations,epsilon] = mdp.valueIteration(initialV=np.zeros(mdp.nStates),tolerance=0.01)
+#optimal_p = mdp.extractPolicy(V)
+#
+#print([V,nIterations,epsilon,optimal_p])
+#
+#result1 = visualize_maze(V, R, optimal_p, nIterations)
+#result1.draw_maze() #최대 value f 이 아닌 최대 q f 으로 화살표를 그려야됨!
+#
 #[policy,V,nIterations] = mdp.policyIteration(np.zeros(mdp.nStates,dtype=int))
-#[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)
-print([V,nIterations,epsilon,optimal_p])
+#
+#print([policy,V,nIterations])
+#
+#result2 = visualize_maze(V, R, policy, nIterations)
+#result2.draw_maze()
 
-result = visualize_maze(V, R, optimal_p)
-result.draw_maze() #최대 value f 이 아닌 최대 q f 으로 화살표를 그려야됨!
+[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)
 
+result3 = visualize_maze(V, R, policy, nIterations)
+result3.draw_maze()
