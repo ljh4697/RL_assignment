@@ -310,7 +310,7 @@ result1 = visualize_maze(V, R, optimal_p, nIterations)
 result1.draw_maze()
 
 
-##ttt
+##tttee
 
 # policy iteration
 [policy,V,nIterations] = mdp.policyIteration(np.zeros(mdp.nStates,dtype=int))
