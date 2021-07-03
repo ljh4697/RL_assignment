@@ -318,7 +318,7 @@ print([policy,V,nIterations])
 result2 = visualize_maze(V, R, policy, nIterations)
 result2.draw_maze()
 
-#[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)
-#
-#result3 = visualize_maze(V, R, policy, nIterations)
-#result3.draw_maze()
+[policy,V,nIterations,epsilon] = mdp.modifiedPolicyIteration(np.zeros(mdp.nStates,dtype=int),np.zeros(mdp.nStates),tolerance=0.01)
+
+result3 = visualize_maze(V, R, policy, nIterations)
+result3.draw_maze()
