@@ -1,5 +1,7 @@
 import numpy as np
 import MDP
+from graphic import visualize_maze
+import matplotlib.pyplot as plt
 
 class RL:
     def __init__(self,mdp,sampleReward):
@@ -13,6 +15,7 @@ class RL:
         '''
 
         self.mdp = mdp
+        self.action = mdp.nActions
         self.sampleReward = sampleReward
 
     def sampleRewardAndNextState(self,state,action):
@@ -52,10 +55,66 @@ class RL:
         Q -- final Q function (|A|x|S| array)
         policy -- final policy
         '''
-
         # temporary values to ensure that the code compiles until this
         # function is coded
-        Q = np.zeros([self.mdp.nActions,self.mdp.nStates])
-        policy = np.zeros(self.mdp.nStates,int)
+        Q = initialQ
+        n_s_a = np.zeros([self.mdp.nActions, self.mdp.nStates], int)
+        
+        policy = [[0] * self.mdp.nActions] * self.mdp.nStates
+        discount = self.mdp.discount
 
-        return [Q,policy]    
+        niteration = 0
+
+        maze_ = visualize_maze(Q, self.mdp.R, niteration)
+        maze_.draw_maze()
+        
+
+        for i in range(nEpisodes):
+            state = s0
+            while(niteration < nSteps):
+
+                maze_.move_agemt(state)
+                plt.pause(0.2)
+
+                action = self.get_action(state, Q, epsilon)
+                [reward, next_state] = self.sampleRewardAndNextState(state,action)
+ 
+                n_s_a[action][state] += 1
+                alpha = 1/n_s_a[action][state]
+
+                q1 = Q[action][state]
+                q2 = reward + discount * max(Q[:, next_state])
+
+                Q[action][state] += alpha *(q2 - q1)
+
+                maze_.edit_q(state, action)
+
+                state = next_state
+
+                if state == 16:
+                    break
+
+
+                niteration += 1
+            plt.show()
+
+
+
+
+
+        return [Q,policy]
+
+
+
+        #epsilon-greedy exploration method
+
+    def get_action(self, state, Q, epsilon):
+        if np.random.rand() < epsilon:
+            action = np.random.choice(range(self.action))
+        else:
+            q_list = Q[:, state]
+            max_q_list = np.argwhere(q_list == np.amax(q_list))
+            max_q = max_q_list.flatten().tolist()
+            action = np.random.choice(max_q)
+        return action
+
