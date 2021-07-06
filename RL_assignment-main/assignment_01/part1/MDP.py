@@ -57,9 +57,9 @@ class MDP(object):
                 
                 for a in range(self.nActions):
                     sigma_gamma_Pr_V = 0
-                    sigma_gamma_Pr_V = discount * T[a][s] * V
+                    sigma_gamma_Pr_V = discount * T[a, s, :] * V
                             
-                    max_q.append(R[a][s] + np.sum(sigma_gamma_Pr_V))
+                    max_q.append(R[a, s] + np.sum(sigma_gamma_Pr_V))
                 next_V[s] = max(max_q)
             
 

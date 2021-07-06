@@ -2,6 +2,7 @@ import numpy as np
 import MDP
 from graphic import visualize_maze
 import matplotlib.pyplot as plt
+import math
 
 class RL:
     def __init__(self,mdp,sampleReward):
@@ -60,21 +61,22 @@ class RL:
         Q = initialQ
         n_s_a = np.zeros([self.mdp.nActions, self.mdp.nStates], int)
         
-        policy = [[0] * self.mdp.nActions] * self.mdp.nStates
         discount = self.mdp.discount
 
-        niteration = 0
 
-        maze_ = visualize_maze(Q, self.mdp.R, niteration)
-        maze_.draw_maze()
+
         
 
         for i in range(nEpisodes):
+            niteration = 0
+
             state = s0
+            maze_ = visualize_maze(Q, self.mdp.R, niteration)
+            maze_.draw_maze()
             while(niteration < nSteps):
 
                 maze_.move_agemt(state)
-                plt.pause(0.2)
+                plt.pause(0.3)
 
                 action = self.get_action(state, Q, epsilon)
                 [reward, next_state] = self.sampleRewardAndNextState(state,action)
@@ -86,8 +88,8 @@ class RL:
                 q2 = reward + discount * max(Q[:, next_state])
 
                 Q[action][state] += alpha *(q2 - q1)
+                maze_.edit_q(state,action, round(Q[action][state],2), i+1,niteration+1)
 
-                maze_.edit_q(state, action)
 
                 state = next_state
 
@@ -96,7 +98,11 @@ class RL:
 
 
                 niteration += 1
-            plt.show()
+            plt.pause(1)
+            plt.close()
+
+        policy = self.extracpolicy(Q)
+
 
 
 
@@ -117,4 +123,19 @@ class RL:
             max_q = max_q_list.flatten().tolist()
             action = np.random.choice(max_q)
         return action
+
+    def extracpolicy(self, Q):
+
+        policy = [[0] for _ in range(self.mdp.nStates)] 
+
+        for s in range(self.mdp.nStates):
+            q_f = Q[:, s]
+            max_q_idx = np.argwhere(q_f == np.amax(q_f))
+            policy[s] = max_q_idx.flatten().tolist()
+
+        return policy
+
+
+
+
 

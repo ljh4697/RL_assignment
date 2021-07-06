@@ -21,12 +21,12 @@ class visualize_maze():
         x = (state % 4) + 1
         y = 4 - (state // 4) 
         t = plt.text(x, y, '●', fontsize = '18', color='red', horizontalalignment='center', verticalalignment='center')
-        plt.pause(0.01)
+        plt.pause(0.4)
         Artist.set_visible(t, False)
         Artist.remove(t)
 
     
-    def edit_q(self, state, action, q_val):
+    def edit_q(self, state, action, q_val, ep,niteration):
 
         Artist.set_visible(self.Q_visible[action][state], False)
         Artist.remove(self.Q_visible[action][state])
@@ -35,7 +35,7 @@ class visualize_maze():
         x = (state % 4) + 1
         y = 4 - (state // 4) 
         q_val = str(q_val)
-
+        plt.title('nepisode = '+ f'{ep} '+',niteration =' + f'{niteration}')
         if action == 0:
             self.Q_visible[action][state] = plt.text(x, y+0.5, q_val, fontsize='10', color='black', horizontalalignment='center', verticalalignment='top')
         elif action == 1:
@@ -57,7 +57,7 @@ class visualize_maze():
         
 
         plt.title('')
-        plt.xlabel('red = V , blue = reward ,' + ' iteration = ' + f'{self.iteration}')
+        plt.xlabel('black = q_val , blue = reward ,')
 
 
         for i in range(0,5):
@@ -71,20 +71,18 @@ class visualize_maze():
             for x in range(1, 5, 1):
                 state = int(-(y-4)*4 + x - 1)
 
-                #value
-                #plt.text(x, y+0.5, round(V[state],2), fontsize=12, color='red', horizontalalignment='center', verticalalignment='top')
                 #reward
                 plt.text(x, y-0.5, round(R[0][state],2), fontsize=8, color='blue', horizontalalignment='center', verticalalignment='bottom')
                 #policy
                 for i, a in enumerate(Q[:, state]):
                     if i == 0:
-                        self.Q_visible[i][state] = plt.text(x, y+0.5, Q[i][state], fontsize='10', color='black', horizontalalignment='center', verticalalignment='top')
+                        self.Q_visible[i][state] = plt.text(x, y+0.5, round(Q[i][state], 2), fontsize='10', color='black', horizontalalignment='center', verticalalignment='top')
                     elif i == 1:
-                        self.Q_visible[i][state] = plt.text(x, y-0.4, Q[i][state], fontsize='10', color='black', horizontalalignment='center', verticalalignment='bottom')
+                        self.Q_visible[i][state] = plt.text(x, y-0.4, round(Q[i][state], 2), fontsize='10', color='black', horizontalalignment='center', verticalalignment='bottom')
                     elif i == 2:
-                        self.Q_visible[i][state] = plt.text(x-0.5, y, Q[i][state], fontsize='10', color='black', horizontalalignment='left', verticalalignment='center')
+                        self.Q_visible[i][state] = plt.text(x-0.5, y, round(Q[i][state], 2), fontsize='10', color='black', horizontalalignment='left', verticalalignment='center')
                     else:
-                        self.Q_visible[i][state] = plt.text(x+0.5, y, Q[i][state], fontsize='10', color='black', horizontalalignment='right', verticalalignment='center')
+                        self.Q_visible[i][state] = plt.text(x+0.5, y, round(Q[i][state], 2), fontsize='10', color='black', horizontalalignment='right', verticalalignment='center')
                 
                 
   
