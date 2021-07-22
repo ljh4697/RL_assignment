@@ -2,6 +2,10 @@ import numpy as np
 import MDP
 import tensorflow as tf
 
+
+class DNN:
+    pass
+
 class RL2:
     def __init__(self,mdp,sampleReward):
         '''Constructor for the RL class
@@ -35,24 +39,7 @@ class RL2:
         nextState = np.where(cumProb >= np.random.rand(1))[0][0]
         return [reward,nextState]
 
-    def sampleSoftmaxPolicy(self,policyParams,state):
-        '''Procedure to sample an action from stochastic policy
-        pi(a|s) = exp(policyParams(a,s))/[sum_a' exp(policyParams(a',s))])
-        This function should be called by reinforce() to selection actions
 
-        Inputs:
-        policyParams -- parameters of a softmax policy (|A|x|S| array)
-        state -- current state
-
-        Outputs: 
-        action -- sampled action
-        '''
-
-        # temporary value to ensure that the code compiles until this
-        # function is coded
-        action = 0
-        
-        return action
 
     def modelBasedRL(self,s0,defaultT,initialR,nEpisodes,nSteps,epsilon=0):
         '''Model-based Reinforcement Learning with epsilon greedy 
@@ -71,6 +58,11 @@ class RL2:
         V -- final value function
         policy -- final policy
         '''
+
+        # policy iteration
+        
+        for s in range(len(mdp.nStates)):
+
 
         # temporary values to ensure that the code compiles until this
         # function is coded
@@ -149,3 +141,22 @@ class RL2:
         policyParams = np.zeros((self.mdp.nActions,self.mdp.nStates))
             
         return policyParams    
+
+    def sampleSoftmaxPolicy(self,policyParams,state):
+        '''Procedure to sample an action from stochastic policy
+        pi(a|s) = exp(policyParams(a,s))/[sum_a' exp(policyParams(a',s))])
+        This function should be called by reinforce() to selection actions
+
+        Inputs:
+        policyParams -- parameters of a softmax policy (|A|x|S| array)
+        state -- current state
+
+        Outputs: 
+        action -- sampled action
+        '''
+
+        # temporary value to ensure that the code compiles until this
+        # function is coded
+        action = 0
+        
+        return action
