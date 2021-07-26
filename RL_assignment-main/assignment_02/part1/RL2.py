@@ -1,6 +1,7 @@
 import numpy as np
 import MDP
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 
 class DNN:
@@ -61,7 +62,7 @@ class RL2:
 
         # policy iteration
         
-        for s in range(len(mdp.nStates)):
+
 
 
         # temporary values to ensure that the code compiles until this
@@ -84,6 +85,32 @@ class RL2:
         # temporary values to ensure that the code compiles until this
         # function is coded
         empiricalMeans = np.zeros(self.mdp.nActions)
+        #reward = np.zeros(self.mdp.nActions)
+        action_cnt  = np.zeros(self.mdp.nActions, int)
+        epsilon = 0.5
+        total_reward = 0
+        for i in range(nIterations):
+            p = np.random.rand(1)
+            if p < epsilon:
+                a = np.random.randint(self.mdp.nActions)
+            else:
+                a = np.argmax(empiricalMeans)
+            
+            action_cnt[a] += 1
+            reward = self.sampleReward(self.mdp.R[a,0])
+            total_reward += reward
+            empiricalMeans[a] = empiricalMeans[a] + 1/action_cnt[a]*(reward - empiricalMeans[a])
+        
+        x = np.arange(3)
+        plt.bar(x, empiricalMeans)
+        plt.xticks(x, x) 
+        plt.show()
+
+        print(action_cnt)
+        print(total_reward)
+
+          
+          
 
         return empiricalMeans
 
