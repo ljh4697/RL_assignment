@@ -1,6 +1,11 @@
 import numpy as np
-a = [1,2,3]
+import random
+import math
+import matplotlib.pyplot as plt
 
-print(a[1].ch)
+a = [1, 2, 3]
 
-print(np.empty([3,2]))
+
+b = list(map(lambda x: x+1, a))
+
+print(b)

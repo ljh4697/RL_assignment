@@ -2,7 +2,8 @@ import numpy as np
 import MDP
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
+import math
+import random
 
 class DNN:
     pass
@@ -107,7 +108,7 @@ class RL2:
         plt.show()
 
         print(action_cnt)
-        print(total_reward)
+        print('epsilone greedy total_reward', total_reward)
 
           
           
@@ -129,7 +130,30 @@ class RL2:
         # temporary values to ensure that the code compiles until this
         # function is coded
         empiricalMeans = np.zeros(self.mdp.nActions)
+        win_cnt = np.zeros(self.mdp.nActions)
+        lose_cnt = np.zeros(self.mdp.nActions)
+        selected_machine_cnt = np.zeros(self.mdp.nActions)
+        total_reward = 0
 
+        for i in range(nIterations):
+
+            beta_max = 0
+            for a in range(self.mdp.nActions):
+                beta_val = random.betavariate(win_cnt[a]+1 , lose_cnt[a]+1)
+                if beta_val > beta_max:
+                    beta_max = beta_val
+                    action = a
+            
+            selected_machine_cnt[action] += 1
+            reward = self.sampleReward(self.mdp.R[a,0])
+            if reward:
+                win_cnt[action] += 1
+            else:
+                lose_cnt[action] += 1
+            total_reward += reward
+               
+        for e in range(self.mdp.nActions):
+            empiricalMeans[e] = win_cnt[e] / selected_machine_cnt[e]
         return empiricalMeans
 
     def UCBbandit(self,nIterations):
@@ -145,6 +169,27 @@ class RL2:
         # temporary values to ensure that the code compiles until this
         # function is coded
         empiricalMeans = np.zeros(self.mdp.nActions)
+        actions_cnt = np.zeros(self.mdp.nActions, int)
+        total_reward = 0
+        for i in range(nIterations):
+            
+            bound = np.zeros(self.mdp.nActions)
+            for k in range(self.mdp.nActions):
+                if actions_cnt[k] == 0:
+                    x = np.inf
+                else:
+                    x = 2*math.log(i)/actions_cnt[k]
+                bound[k] = math.sqrt(x)
+
+            a = np.argmax(empiricalMeans + bound)
+
+            reward = self.sampleReward(self.mdp.R[a,0])
+            actions_cnt[a] += 1
+            total_reward += reward
+            empiricalMeans[a] = empiricalMeans[a] + 1/actions_cnt[a]*(reward - empiricalMeans[a])
+        print(actions_cnt)
+        print('UCB total_reward =' ,total_reward)
+        
 
         return empiricalMeans
 
