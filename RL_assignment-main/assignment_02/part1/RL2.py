@@ -102,13 +102,11 @@ class RL2:
             total_reward += reward
             empiricalMeans[a] = empiricalMeans[a] + 1/action_cnt[a]*(reward - empiricalMeans[a])
         
-        x = np.arange(3)
-        plt.bar(x, empiricalMeans)
-        plt.xticks(x, x) 
-        plt.show()
 
+
+        print("\n★  epsilonGreedyBandit results ★\n")
         print(action_cnt)
-        print('epsilone greedy total_reward', total_reward)
+        print('epsilone greedy total_reward : ', total_reward)
 
           
           
@@ -130,30 +128,35 @@ class RL2:
         # temporary values to ensure that the code compiles until this
         # function is coded
         empiricalMeans = np.zeros(self.mdp.nActions)
-        win_cnt = np.zeros(self.mdp.nActions)
-        lose_cnt = np.zeros(self.mdp.nActions)
-        selected_machine_cnt = np.zeros(self.mdp.nActions)
+        selected_machine_cnt = np.zeros(self.mdp.nActions, int)
         total_reward = 0
 
         for i in range(nIterations):
 
             beta_max = 0
             for a in range(self.mdp.nActions):
-                beta_val = random.betavariate(win_cnt[a]+1 , lose_cnt[a]+1)
+                beta_val = random.betavariate(prior[a,0], prior[a,1])
                 if beta_val > beta_max:
                     beta_max = beta_val
                     action = a
             
             selected_machine_cnt[action] += 1
-            reward = self.sampleReward(self.mdp.R[a,0])
-            if reward:
-                win_cnt[action] += 1
+            reward = self.sampleReward(self.mdp.R[action,0])
+            if reward == 1:
+                prior[action, 0] += 1
             else:
-                lose_cnt[action] += 1
+                prior[action, 1] += 1
             total_reward += reward
                
         for e in range(self.mdp.nActions):
-            empiricalMeans[e] = win_cnt[e] / selected_machine_cnt[e]
+            empiricalMeans[e] = (prior[e,0]-1)/(prior[e,0] + prior[e,1] - 2)
+
+
+
+
+        print("\n★  thompsonSamplingBandit results ★\n")
+        print(selected_machine_cnt)
+        print("thompsonSampling total reward : " , total_reward)
         return empiricalMeans
 
     def UCBbandit(self,nIterations):
@@ -187,6 +190,9 @@ class RL2:
             actions_cnt[a] += 1
             total_reward += reward
             empiricalMeans[a] = empiricalMeans[a] + 1/actions_cnt[a]*(reward - empiricalMeans[a])
+        
+
+        print("\n★  UCBbandit results ★\n")
         print(actions_cnt)
         print('UCB total_reward =' ,total_reward)
         

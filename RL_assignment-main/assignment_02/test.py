@@ -3,9 +3,8 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-a = [1, 2, 3]
+prior=np.ones([3,2])
+
+print(prior)
 
 
-b = list(map(lambda x: x+1, a))
-
-print(b)
