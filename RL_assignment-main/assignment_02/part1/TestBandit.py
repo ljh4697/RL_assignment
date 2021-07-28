@@ -40,3 +40,7 @@ print(' -------------------------------------------------------- ')
 empiricalMeans = banditProblem.UCBbandit(nIterations=400)
 print(empiricalMeans)
 print(' -------------------------------------------------------- ')
+
+
+
+# chang

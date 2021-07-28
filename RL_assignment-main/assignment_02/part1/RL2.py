@@ -1,6 +1,5 @@
 import numpy as np
 import MDP
-import tensorflow as tf
 import matplotlib.pyplot as plt
 import math
 import random
