@@ -9,6 +9,9 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
+
+# DNN input 과 output 은 numpy 한가지 차원에 떠 싸여있다
+# ex) input = [input] / output = [output]
 class DNN(tf.keras.Model):
     def __init__(self, action_size):
         super(DNN, self).__init__()
@@ -38,12 +41,10 @@ class REINFORCEAgent:
     def get_action(self, state):
         policy = self.model(state)[0]
         policy = np.array(policy)
-        cumprob = np.cumsum(policy)
-        action = np.where(cumprob >= np.random.rand(1))[0][0]
-        return action
+        return np.random.choice(self.action_size, 1, p=policy)[0]
 
     def discount_rewards(self, rewards):
-        discounted_rewards = np.zeros_lize(rewards)
+        discounted_rewards = np.zeros_like(rewards)
         running_add = 0
         for t in reversed(range(0, len(rewards))):
             running_add = running_add * self.discount_factor + rewards[t]
@@ -53,7 +54,7 @@ class REINFORCEAgent:
     def append_sample(self, state, action, reward):
         self.states.append(state[0])
         self.rewards.append(reward)
-        act = np.zeros(self.actions_size)
+        act = np.zeros(self.action_size)
         act[action] = 1
         self.actions.append(act)
 
@@ -286,8 +287,45 @@ class RL2:
         # temporary values to ensure that the code compiles until this
         # function is coded
         policyParams = np.zeros((self.mdp.nActions,self.mdp.nStates))
+        agent = REINFORCEAgent(self.mdp.nStates, self.mdp.nActions)
+
+        scores, episodes = [], []
+
+        for e in range(nEpisodes):
+            print(e)
+            done = False
+            score = 0
+            state = s0
+            state = np.reshape(state, [1,1])
             
-        return policyParams    
+            
+            n = 0
+            while not done:
+                action = agent.get_action(state)
+
+                [reward, next_state] = self.sampleRewardAndNextState(state, action)
+                agent.append_sample(state, action, reward)
+
+
+
+                n+=1
+                if n == nSteps or state[0] == 16:
+                    done = True
+                if done:
+                    entropy = agent.train_model()
+                    scores.append(score)
+                    episodes.append(e)
+                    plt.plot(episodes, scores, 'b')
+                    plt.xlabel('episodes')
+                    plt.ylabel('scores')
+                    plt.savefig('./save_graph/reinforce_graph.png')
+
+            if e % 100 == 0:
+                agent.model.save_weights('save_model/reinforce_model', save_format='tf')
+
+
+            
+        return    
 
     def sampleSoftmaxPolicy(self,policyParams,state):
         '''Procedure to sample an action from stochastic policy

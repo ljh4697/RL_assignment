@@ -3,8 +3,12 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-prior=np.ones([3,2])
 
-print(prior)
+#state = np.array([0])
+state = np.zeros(16)
+#state = np.reshape( state, [1, 16])
+state = np.array([state])
+
+print(state)
 
 
