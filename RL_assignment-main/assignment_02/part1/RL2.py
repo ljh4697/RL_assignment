@@ -8,6 +8,7 @@ import random
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
+import os
 
 
 # DNN input 과 output 은 numpy 한가지 차원에 떠 싸여있다
@@ -52,6 +53,7 @@ class REINFORCEAgent:
         return discounted_rewards
 
     def append_sample(self, state, action, reward):
+
         self.states.append(state[0])
         self.rewards.append(reward)
         act = np.zeros(self.action_size)
@@ -290,38 +292,46 @@ class RL2:
         agent = REINFORCEAgent(self.mdp.nStates, self.mdp.nActions)
 
         scores, episodes = [], []
+        dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
         for e in range(nEpisodes):
-            print(e)
             done = False
             score = 0
-            state = s0
-            state = np.reshape(state, [1,1])
+            state = np.zeros(self.mdp.nStates)
+            state[s0] = 1
+            state = np.reshape(state, [1,self.mdp.nStates])
             
             
             n = 0
             while not done:
                 action = agent.get_action(state)
 
-                [reward, next_state] = self.sampleRewardAndNextState(state, action)
+                [reward, next_state] = self.sampleRewardAndNextState(np.where(state[0,:] == 1)[0][0], action)
                 agent.append_sample(state, action, reward)
+                score += reward
 
+                state = np.zeros(self.mdp.nStates)
+                state[next_state] = 1
+                state = np.reshape(state, [1,self.mdp.nStates])
 
 
                 n+=1
-                if n == nSteps or state[0] == 16:
+                if n == nSteps or state[0, 0] == 16:
                     done = True
                 if done:
                     entropy = agent.train_model()
                     scores.append(score)
                     episodes.append(e)
+
+                    print("episode: {:3d} | score: {:.3f} | entropy: {:.3f}".format(
+        e, score, entropy))
                     plt.plot(episodes, scores, 'b')
                     plt.xlabel('episodes')
                     plt.ylabel('scores')
-                    plt.savefig('./save_graph/reinforce_graph.png')
+                    plt.savefig(dirpath+'/save_graph/reinforce_graph.png')
 
             if e % 100 == 0:
-                agent.model.save_weights('save_model/reinforce_model', save_format='tf')
+                agent.model.save_weights(dirpath + '/save_model/reinforce_model', save_format='tf')
 
 
             
