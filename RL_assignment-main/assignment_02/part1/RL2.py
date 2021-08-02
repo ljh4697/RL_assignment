@@ -114,6 +114,12 @@ class RL2:
         return [reward,nextState]
 
 
+    def PolicyEvaluation(self):
+        pass
+
+
+    def PolicyImprovement(self):
+        pass
 
     def modelBasedRL(self,s0,defaultT,initialR,nEpisodes,nSteps,epsilon=0):
         '''Model-based Reinforcement Learning with epsilon greedy 
@@ -133,15 +139,79 @@ class RL2:
         policy -- final policy
         '''
 
-        # policy iteration
+        # with policy iteration
+
+        V = np.zeros(self.mdp.nStates)
+        policy = np.zeros(self.mdp.nStates,int)
+
+        n_s_a = np.zeros([self.mdp.nActions, self.mdp.nStates])
+        n_s_a_sp = np.zeros([self.mdp.nActions, self.mdp.nStates, self.mdp.nStates])
+
+        T = defaultT
+        R = initialR
+        
+        scores, episodes = [], []
+
+
+        dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
+
+
+        for e in range(nEpisodes):
+            n = 0
+            done = False
+            state = s0
+            score = 0
+
+            while not done:
+
+
+                action = policy(state)
+
+                [reward, next_state] = self.sampleRewardAndNextState(state, action)
+
+
+
+                n_s_a[action, state] += 1
+                n_s_a_sp[action, state, next_state] += 1
+                # update transision model
+                T[action, state, next_state] = n_s_a_sp[action, state, next_state] / n_s_a[action, state]
+                
+                # update reward model
+                R[action, state] += (1/n_s_a[action, state])*(reward - R[action, state])
+
+
+
+                q_s_a = np.zeros(self.mdp.nActions)
+
+                for a in range(self.mdp.nActions):
+                    q_s_a[a] = R[a, state] + np.sum(self.mdp.discount * T[a, state, :] * V[:])
+                
+                V[state] = np.max(q_s_a)
+                policy[state] = np.argmax(q_s_a)
+                state = next_state
+
+                score += reward
+                n += 1
+                if n == nSteps or state == 16:
+                    done = True
+
+                if done:
+                    scores.append(score)
+                    episodes.append(e)
+
+                    print("episode: {:3d} | score: {:.3f} ".format(
+        e, score))
+                    plt.plot(episodes, scores, 'r')
+                    plt.xlabel('episodes')
+                    plt.ylabel('scores')
+                    plt.savefig(dirpath+'/save_graph/modelbasedRL.png')
         
 
 
 
         # temporary values to ensure that the code compiles until this
         # function is coded
-        V = np.zeros(self.mdp.nStates)
-        policy = np.zeros(self.mdp.nStates,int)
+
 
         return [V,policy]    
 
