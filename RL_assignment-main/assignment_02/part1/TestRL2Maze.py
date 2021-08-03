@@ -1,6 +1,8 @@
 import numpy as np
 import MDP
 import RL2
+import matplotlib.pyplot as plt
+import os
 
 
 ''' Construct a simple maze MDP
@@ -305,20 +307,54 @@ mdp = MDP.MDP(T,R,discount)
 # RL problem
 rlProblem = RL2.RL2(mdp,np.random.normal)
 
-#episodes = np.array(range(200))
-## Test REINFORCE 
-#scores_reinforce = rlProblem.reinforce(s0=0,initialPolicyParams=np.random.rand(mdp.nActions,mdp.nStates),nEpisodes=200,nSteps=100)
-#print("\nREINFORCE results")
-##print(policy)
-#
-## Test model-based RL
-#[V,policy,scores_mb] = rlProblem.modelBasedRL(s0=0,defaultT=np.zeros([mdp.nActions,mdp.nStates,mdp.nStates])/mdp.nStates,initialR=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
-#print("\nmodel-based RL results")
-#print(V)
+episodes = np.array(range(200))
+# Test REINFORCE 
+scores_reinforce = rlProblem.reinforce(s0=0,initialPolicyParams=np.random.rand(mdp.nActions,mdp.nStates),nEpisodes=200,nSteps=100)
+print("\nREINFORCE results")
+print('*********************************************************')
+print()
 #print(policy)
 
+# Test model-based RL
+[V,policy,scores_mb] = rlProblem.modelBasedRL(s0=0,defaultT=np.zeros([mdp.nActions,mdp.nStates,mdp.nStates])/mdp.nStates,initialR=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
+print("\nmodel-based RL results")
+print(V)
+print(policy)
+print('*********************************************************')
+print()
+
 # Test Q-learning
-[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
+[Q,policy,scores_ql] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
 print("\nQ-learning results")
 print(Q)
 print(policy)
+print('*********************************************************')
+print()
+
+dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
+
+
+plt.figure(figsize=(14,14))
+plt.subplot(221)
+plt.plot(episodes, scores_reinforce, 'r', alpha=0.6, label='REINFORCE')
+plt.legend(loc='lower right')
+
+plt.subplot(222)
+plt.plot(episodes, scores_mb, 'g' , alpha=0.6, label='modelbased VI')
+plt.legend(loc='lower right')
+
+plt.subplot(223)
+plt.plot(episodes, scores_ql, 'b' , alpha=0.6, label='Q-learning')
+plt.legend(loc='lower right')
+
+plt.subplot(224)
+plt.plot(episodes, scores_reinforce, 'r', alpha=0.6, label='REINFORCE')
+plt.plot(episodes, scores_mb, 'g' , alpha=0.6, label='modelbased VI')
+plt.plot(episodes, scores_ql, 'b' , alpha=0.6, label='Q-learning')
+plt.title('RL2 scores graph')
+plt.xlabel('episodes')
+plt.ylabel('scores')
+plt.legend(loc='lower right')
+plt.savefig(dirpath+'/save_graph/scores_graph.png')
+plt.show()
+

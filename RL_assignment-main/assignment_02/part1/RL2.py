@@ -177,9 +177,7 @@ class RL2:
 
 
             while not done:
-                states.append(state)
-                if e == 3:
-                    print("hello")
+
                 
                 #epsilon greedy
                 if np.random.rand() < epsilon:
@@ -194,8 +192,6 @@ class RL2:
 
                 [reward, next_state] = self.sampleRewardAndNextState(state, action)
 
-
-
                 n_s_a[action, state] += 1
                 n_s_a_sp[action, state, next_state] += 1
                 # update transision model
@@ -203,9 +199,6 @@ class RL2:
                 
                 # update reward model
                 R[action, state] += (1/n_s_a[action, state])*(reward - R[action, state])
-
-
-
 
                 q_s_a = np.zeros(self.mdp.nActions)
                 for a in range(self.mdp.nActions):
@@ -231,10 +224,10 @@ class RL2:
                     print()
                     print('*******************************************')
                     print()
-            plt.plot(episodes, scores, 'r')
-            plt.xlabel('episodes')
-            plt.ylabel('scores')
-            plt.savefig(dirpath+'/save_graph/modelbasedRL.png')
+            #plt.plot(episodes, scores, 'r')
+            #plt.xlabel('episodes')
+            #plt.ylabel('scores')
+            #plt.savefig(dirpath+'/save_graph/modelbasedRL.png')
 
 
 
@@ -425,10 +418,10 @@ class RL2:
 
                     print("episode: {:3d} | score: {:.3f} | entropy: {:.3f}".format(
         e, score, entropy))
-                    plt.plot(episodes, scores, 'b')
-                    plt.xlabel('episodes')
-                    plt.ylabel('scores')
-                    plt.savefig(dirpath+'/save_graph/reinforce_graph.png')
+                    #plt.plot(episodes, scores, 'b')
+                    #plt.xlabel('episodes')
+                    #plt.ylabel('scores')
+                    #plt.savefig(dirpath+'/save_graph/reinforce_graph.png')
 
             if e % 100 == 0:
                 agent.model.save_weights(dirpath + '/save_model/reinforce_model', save_format='tf')
@@ -478,18 +471,22 @@ class RL2:
         # function is coded
         Q = initialQ
         n_s_a = np.zeros([self.mdp.nActions, self.mdp.nStates], int)
-        
+        policy = np.zeros(self.mdp.nStates)
         discount = self.mdp.discount
 
+        episodes, scores= [], []
 
+        dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
         
 
-        for i in range(nEpisodes):
+        for e in range(nEpisodes):
             n = 0
             state = s0
+            done = False
+            score = 0
 
-            while(n < nSteps):
+            while not done:
 
 
                 #epsilon greedy
@@ -501,35 +498,43 @@ class RL2:
                     max_q = max_q_list.flatten().tolist()
                     action = np.random.choice(max_q)
 
-                    policy[state] = action
-
-                action = self.get_action(state, Q, epsilon)
                 [reward, next_state] = self.sampleRewardAndNextState(state,action)
  
                 n_s_a[action][state] += 1
                 alpha = 1/n_s_a[action][state]
 
                 q1 = Q[action][state]
-                q2 = reward + discount * max(Q[:, next_state])
+                q2 = reward + discount * np.max(Q[:, next_state])
 
                 Q[action][state] += alpha *(q2 - q1)
 
-
+                score += reward
                 state = next_state
 
-                if state == 16:
-                    break
-
-
                 n += 1
-            plt.pause(1)
-            plt.close()
-
-        policy = self.extracpolicy(Q)
 
 
+                if state == 16 or n == nSteps:
+                    done = True
+                if done:
+                    scores.append(score)
+                    episodes.append(e)
+
+                    print("step: {:3d} | episode: {:3d} | score: {:.3f} ".format(n, e, score))
+
+                    for s in range(self.mdp.nStates):
+                        policy[s] = np.argmax(Q[:, s])
+
+
+        #plt.plot(episodes, scores, 'b' ,alpha=0.6)
+        #plt.xlabel('episodes')
+        #plt.ylabel('scores')
+        #plt.savefig(dirpath+'/save_graph/qlearning_graph.png')
 
 
 
 
-        return [Q,policy]
+
+
+
+        return [Q, policy, scores]
