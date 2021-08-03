@@ -305,19 +305,20 @@ mdp = MDP.MDP(T,R,discount)
 # RL problem
 rlProblem = RL2.RL2(mdp,np.random.normal)
 
-# Test REINFORCE 
-policy = rlProblem.reinforce(s0=0,initialPolicyParams=np.random.rand(mdp.nActions,mdp.nStates),nEpisodes=200,nSteps=100)
-print("\nREINFORCE results")
+#episodes = np.array(range(200))
+## Test REINFORCE 
+#scores_reinforce = rlProblem.reinforce(s0=0,initialPolicyParams=np.random.rand(mdp.nActions,mdp.nStates),nEpisodes=200,nSteps=100)
+#print("\nREINFORCE results")
+##print(policy)
+#
+## Test model-based RL
+#[V,policy,scores_mb] = rlProblem.modelBasedRL(s0=0,defaultT=np.zeros([mdp.nActions,mdp.nStates,mdp.nStates])/mdp.nStates,initialR=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
+#print("\nmodel-based RL results")
+#print(V)
 #print(policy)
-np.random.normal
-# Test model-based RL
-[V,policy] = rlProblem.modelBasedRL(s0=0,defaultT=np.zeros([mdp.nActions,mdp.nStates,mdp.nStates])/mdp.nStates,initialR=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
-print("\nmodel-based RL results")
-print(V)
-print(policy)
 
 # Test Q-learning
-#[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
-#print("\nQ-learning results")
-#print(Q)
-#print(policy)
+[Q,policy] = rlProblem.qLearning(s0=0,initialQ=np.zeros([mdp.nActions,mdp.nStates]),nEpisodes=200,nSteps=100,epsilon=0.05)
+print("\nQ-learning results")
+print(Q)
+print(policy)

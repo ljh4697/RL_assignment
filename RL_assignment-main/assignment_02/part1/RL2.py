@@ -121,6 +121,19 @@ class RL2:
     def PolicyImprovement(self):
         pass
 
+    def get_action(self, state, V, epsilon):
+        if np.random.rand() < epsilon:
+            action = np.random.choice(range(self.action))
+        else:
+            
+
+            V
+            max_q_list = np.argwhere(q_list == np.amax(q_list))
+            max_q = max_q_list.flatten().tolist()
+            action = np.random.choice(max_q)
+        return action
+
+
     def modelBasedRL(self,s0,defaultT,initialR,nEpisodes,nSteps,epsilon=0):
         '''Model-based Reinforcement Learning with epsilon greedy 
         exploration.  This function should use value iteration,
@@ -152,7 +165,6 @@ class RL2:
         
         scores, episodes = [], []
 
-
         dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
 
@@ -161,11 +173,24 @@ class RL2:
             done = False
             state = s0
             score = 0
+            states = []
+
 
             while not done:
+                states.append(state)
+                if e == 3:
+                    print("hello")
+                
+                #epsilon greedy
+                if np.random.rand() < epsilon:
+                    action = np.random.choice(range(self.mdp.nActions))
+                else:
+                    q_s_a = np.zeros(self.mdp.nActions)
+                    for a in range(self.mdp.nActions):
+                        q_s_a[a] = R[a, state] + self.mdp.discount*np.sum(T[a, state, :] * V[:])
 
-
-                action = policy(state)
+                    policy[state] = np.argmax(q_s_a)
+                    action = policy[state]  
 
                 [reward, next_state] = self.sampleRewardAndNextState(state, action)
 
@@ -174,22 +199,21 @@ class RL2:
                 n_s_a[action, state] += 1
                 n_s_a_sp[action, state, next_state] += 1
                 # update transision model
-                T[action, state, next_state] = n_s_a_sp[action, state, next_state] / n_s_a[action, state]
+                T[action, state, :] = n_s_a_sp[action, state,:]/n_s_a[action, state]
                 
                 # update reward model
                 R[action, state] += (1/n_s_a[action, state])*(reward - R[action, state])
 
 
 
-                q_s_a = np.zeros(self.mdp.nActions)
 
+                q_s_a = np.zeros(self.mdp.nActions)
                 for a in range(self.mdp.nActions):
-                    q_s_a[a] = R[a, state] + np.sum(self.mdp.discount * T[a, state, :] * V[:])
+                    q_s_a[a] = R[a, state] + self.mdp.discount*np.sum(T[a, state, :] * V[:])
                 
                 V[state] = np.max(q_s_a)
-                policy[state] = np.argmax(q_s_a)
-                state = next_state
 
+                state = next_state
                 score += reward
                 n += 1
                 if n == nSteps or state == 16:
@@ -199,13 +223,19 @@ class RL2:
                     scores.append(score)
                     episodes.append(e)
 
-                    print("episode: {:3d} | score: {:.3f} ".format(
-        e, score))
-                    plt.plot(episodes, scores, 'r')
-                    plt.xlabel('episodes')
-                    plt.ylabel('scores')
-                    plt.savefig(dirpath+'/save_graph/modelbasedRL.png')
-        
+                    print("step: {:3d} | episode: {:3d} | score: {:.3f} ".format(n, e, score))
+                    #print(T)
+                    #print(R)
+                    print(V)
+                    print(states)
+                    print()
+                    print('*******************************************')
+                    print()
+            plt.plot(episodes, scores, 'r')
+            plt.xlabel('episodes')
+            plt.ylabel('scores')
+            plt.savefig(dirpath+'/save_graph/modelbasedRL.png')
+
 
 
 
@@ -213,7 +243,7 @@ class RL2:
         # function is coded
 
 
-        return [V,policy]    
+        return [V,policy,scores]    
 
     def epsilonGreedyBandit(self,nIterations):
         '''Epsilon greedy algorithm for bandits (assume no discount factor)
@@ -405,7 +435,7 @@ class RL2:
 
 
             
-        return    
+        return scores   
 
     def sampleSoftmaxPolicy(self,policyParams,state):
         '''Procedure to sample an action from stochastic policy
@@ -425,3 +455,81 @@ class RL2:
         action = 0
         
         return action
+
+    def qLearning(self,s0,initialQ,nEpisodes,nSteps,epsilon=0,temperature=0):
+        '''qLearning algorithm.  Epsilon exploration and Boltzmann exploration
+        are combined in one procedure by sampling a random action with 
+        probabilty epsilon and performing Boltzmann exploration otherwise.  
+        When epsilon and temperature are set to 0, there is no exploration.
+
+        Inputs:
+        s0 -- initial state
+        initialQ -- initial Q function (|A|x|S| array)
+        nEpisodes -- # of episodes (one episode consists of a trajectory of nSteps that starts in s0
+        nSteps -- # of steps per episode
+        epsilon -- probability with which an action is chosen at random
+        temperature -- parameter that regulates Boltzmann exploration
+
+        Outputs: 
+        Q -- final Q function (|A|x|S| array)
+        policy -- final policy
+        '''
+        # temporary values to ensure that the code compiles until this
+        # function is coded
+        Q = initialQ
+        n_s_a = np.zeros([self.mdp.nActions, self.mdp.nStates], int)
+        
+        discount = self.mdp.discount
+
+
+
+        
+
+        for i in range(nEpisodes):
+            n = 0
+            state = s0
+
+            while(n < nSteps):
+
+
+                #epsilon greedy
+                if np.random.rand() < epsilon:
+                    action = np.random.choice(range(self.mdp.nActions))
+                else:
+                    q_list = Q[:, state]
+                    max_q_list = np.argwhere(q_list == np.amax(q_list))
+                    max_q = max_q_list.flatten().tolist()
+                    action = np.random.choice(max_q)
+
+                    policy[state] = action
+
+                action = self.get_action(state, Q, epsilon)
+                [reward, next_state] = self.sampleRewardAndNextState(state,action)
+ 
+                n_s_a[action][state] += 1
+                alpha = 1/n_s_a[action][state]
+
+                q1 = Q[action][state]
+                q2 = reward + discount * max(Q[:, next_state])
+
+                Q[action][state] += alpha *(q2 - q1)
+
+
+                state = next_state
+
+                if state == 16:
+                    break
+
+
+                n += 1
+            plt.pause(1)
+            plt.close()
+
+        policy = self.extracpolicy(Q)
+
+
+
+
+
+
+        return [Q,policy]

@@ -10,9 +10,9 @@ from matplotlib.artist import Artist
 
 class visualize_maze():
     ## this class is for  4x4 maze
-    def __init__(self, Q, R, iteration):
+    def __init__(self, V, R, iteration):
         
-        self.Q = Q
+        self.V = V
         self.R = R
         self.iteration = iteration
         self.Q_visible = [[0] * 16 for i in range(4)] 
