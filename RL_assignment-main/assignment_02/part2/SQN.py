@@ -10,7 +10,7 @@ Original file is located at
 import os
 import sys
 import gym
-import matplotlib.pyplot as plt
+import pylab
 import random
 import numpy as np
 from collections import deque
@@ -133,7 +133,6 @@ def main():
 
     num_episode = 300
     avg_score = 0
-    avg_scores = []
     dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
     for e in range(num_episode):
@@ -177,32 +176,19 @@ def main():
 
                 if e >= 100:
                     avg_score = sum(score_past100) /100
-                    avg_scores.append(avg_score)
                     print("Avg 100 episodes score: {:3.2f}".format(avg_score))
 
 
                 # 이동 평균이 180 이상일 때 종료
                 if avg_score > 180:
                     agent1.model.save_weights(dirpath + "/save_model/model", save_format="tf")
-                    plt.figure(figsize=(14,7))
-                    
-                    plt.subplot(211)
-                    plt.plot(episodes, scores, 'b', alpha=0.7)
-                    plt.xlabel("episode")
-                    plt.ylabel("scores")
-                    plt.xlim([0, e])
-
-                    plt.subplot(212)
-                    plt.plot(range(100, e+1), avg_scores, 'r', alpha=0.7)
-                    plt.xlabel("episode")
-                    plt.ylabel("average scores")
-                    plt.xlim([0, e])
-
-                    plt.savefig(dirpath  + "/save_graph/graph.png")
-                    plt.show()
                     sys.exit()
+                    
 
-
+    pylab.plot(episodes, scores, 'b', alpha=0.7)
+    pylab.xlabel("episode")
+    pylab.ylabel("average score")
+    pylab.savefig(dirpath  + "/save_graph/graph.png")
 
 
 
