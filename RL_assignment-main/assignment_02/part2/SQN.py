@@ -10,14 +10,18 @@ Original file is located at
 import os
 import sys
 import gym
-import pylab
 import random
 import numpy as np
 from collections import deque
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Lambda
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.initializers import RandomUniform
+
+import math
+
+import matplotlib.pyplot as plt
 
 # Selection action a and execute it
 # Receive immediate reward r
@@ -38,19 +42,33 @@ from tensorflow.keras.initializers import RandomUniform
 class DQN(tf.keras.Model):
     def __init__(self, action_size):
         super(DQN, self).__init__()
-        self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
-        self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
+    #     self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
+    #     self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
+    #     self.fc_out = Dense(action_size,
+    #                         kernel_initializer=RandomUniform(-1, 1))
+    
+    # def call(self, input):
+    #     x = self.fc1(input)
+    #     x = self.fc2(x)
+    #     q = self.fc_out(x)
+    #     return q
+        self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1), bias_initializer=RandomUniform(-1, 1))
+        self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1), bias_initializer=RandomUniform(-1, 1))
         self.fc_out = Dense(action_size,
-                            kernel_initializer=RandomUniform(-1, 1))
+                            kernel_initializer=RandomUniform(-1, 1), bias_initializer=RandomUniform(-1, 1))
+        self.exp_q = Lambda(lambda x: math.exp(x/0.5))
     
     def call(self, input):
         x = self.fc1(input)
         x = self.fc2(x)
         q = self.fc_out(x)
-        return q
+        exp_q = self.exp_q(q)
+
+        return exp_q
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
+        
         self.state_size = state_size
         self.action_size = action_size
 
@@ -62,6 +80,7 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.batch_size = 500
         self.train_start = 1000
+        self.l = 0.1
 
         # replay memory size
         self.memory = deque(maxlen=10000)
@@ -75,7 +94,10 @@ class DQNAgent:
         self.update_target_model()
 
     def update_target_model(self):
+        #print(self.model.get_weights())
+        #print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
         self.target_model.set_weights(self.model.get_weights())
+        #print(self.target_model.get_weights())
         return
 
     def get_action(self, state):
@@ -84,6 +106,16 @@ class DQNAgent:
         else:
             q_value = self.model(state)
             return np.argmax(q_value[0])
+
+    def get_action_stochastic(self, state):
+        if np.random.rand() <= self.epsilon:
+            return random.randrange(self.action_size)
+        else:
+            exp_q = self.model(state)[0]
+            exp_q = np.array(exp_q)
+                    exp_q
+            return np.random.choice(self.action_size, 1, p=policy)[0]
+
         
     def append_sample_replay(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -121,7 +153,6 @@ class DQNAgent:
 
 def main():
 
-
     env = gym.make('CartPole-v0')
 
     state_size = env.observation_space.shape[0]
@@ -146,7 +177,7 @@ def main():
         while not done:
             i += 1
             # get action from current state
-            action = agent1.get_action(state)
+            action = agent1.get_action_stochastic(state)
             # get nextstate
             next_state, reward, done, info = env.step(action)
             next_state = np.reshape(next_state, [1, state_size])
@@ -180,15 +211,17 @@ def main():
 
 
                 # 이동 평균이 180 이상일 때 종료
-                if avg_score > 180:
-                    agent1.model.save_weights(dirpath + "/save_model/model", save_format="tf")
-                    sys.exit()
+                if avg_score > 180 or e == num_episode-1:
+                    agent1.model.save_weights(dirpath + "/save_model/sqn_model1", save_format="tf")
                     
 
-    pylab.plot(episodes, scores, 'b', alpha=0.7)
-    pylab.xlabel("episode")
-    pylab.ylabel("average score")
-    pylab.savefig(dirpath  + "/save_graph/graph.png")
+                    plt.plot(episodes, scores, 'b', alpha=0.7)
+                    plt.xlabel("episode")
+                    plt.ylabel("average score")
+                    plt.savefig(dirpath  + "/save_graph/sqn_graph1.png")
+
+                    sys.exit()
+
 
 
 

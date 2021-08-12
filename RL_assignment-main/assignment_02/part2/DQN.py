@@ -75,6 +75,8 @@ class DQNAgent:
         self.update_target_model()
 
     def update_target_model(self):
+        print(self.model.get_weights())
+        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
         self.target_model.set_weights(self.model.get_weights())
         return
 
