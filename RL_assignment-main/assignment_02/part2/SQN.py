@@ -52,19 +52,21 @@ class DQN(tf.keras.Model):
     #     x = self.fc2(x)
     #     q = self.fc_out(x)
     #     return q
-        self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1), bias_initializer=RandomUniform(-1, 1))
-        self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1), bias_initializer=RandomUniform(-1, 1))
+        self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
+        self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
         self.fc_out = Dense(action_size,
-                            kernel_initializer=RandomUniform(-1, 1), bias_initializer=RandomUniform(-1, 1))
-        self.exp_q = Lambda(lambda x: math.exp(x/0.5))
+                            kernel_initializer=RandomUniform(-1, 1))
+
     
     def call(self, input):
         x = self.fc1(input)
         x = self.fc2(x)
         q = self.fc_out(x)
-        exp_q = self.exp_q(q)
 
-        return exp_q
+        return q
+
+    def exp(self, x):
+        return math.exp(x)
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
@@ -80,10 +82,10 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.batch_size = 500
         self.train_start = 1000
-        self.l = 0.1
+        self.l = 0.5
 
         # replay memory size
-        self.memory = deque(maxlen=10000)
+        self.memory = deque(maxlen=3000)
 
         # make model, target_model
         self.model = DQN(action_size)
@@ -91,13 +93,12 @@ class DQNAgent:
         self.optimizer = Adam(learning_rate=self.learning_rate)
 
         # initialize target_model
+        #self.get_action_stochastic(np.array([[0, 0, 0, 0]]))
+        #self.get_action_stochastic2(np.array([[0, 0, 0, 0]]))
         self.update_target_model()
 
     def update_target_model(self):
-        #print(self.model.get_weights())
-        #print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
         self.target_model.set_weights(self.model.get_weights())
-        #print(self.target_model.get_weights())
         return
 
     def get_action(self, state):
@@ -107,14 +108,34 @@ class DQNAgent:
             q_value = self.model(state)
             return np.argmax(q_value[0])
 
+
+
     def get_action_stochastic(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
         else:
-            exp_q = self.model(state)[0]
-            exp_q = np.array(exp_q)
-                    exp_q
-            return np.random.choice(self.action_size, 1, p=policy)[0]
+            q = np.array(self.model(state)[0])
+            q = np.array(q + 1e-5)
+            exp_q = np.exp(q/self.l)
+            if np.inf in exp_q:
+                return exp_q[0].index(np.inf)
+            policy = exp_q/np.sum(exp_q)
+            if any(tf.math.is_nan(policy)):
+                return random.randrange(self.action_size)
+            try:
+                return np.random.choice(self.action_size, 1, p=policy)[0]
+            except:
+                return np.argmax(self.model(state)[0])
+
+    def get_action_stochastic2(self, state):
+
+        q = self.target_model(state)[0]
+        q = np.array(q)
+        exp_q = np.exp(q/self.l)
+        if np.inf in exp_q:
+            return exp_q[0].index(np.inf)
+        policy = exp_q/np.sum(exp_q)
+        return np.random.choice(self.action_size, 1, p=policy)[0]
 
         
     def append_sample_replay(self, state, action, reward, next_state, done):
@@ -135,17 +156,22 @@ class DQNAgent:
         #train parameter
         model_params = self.model.trainable_variables
         with tf.GradientTape() as tape:
-            predicts = self.model(states)
+            # predicts = self.model(states)
+            q = self.model(states)
+
             one_hot_action = tf.one_hot(actions, self.action_size)
-            predicts = tf.reduce_sum(one_hot_action * predicts, axis=1)
+            predicts = tf.reduce_sum(one_hot_action * q, axis=1)
 
-            target_predicts = self.target_model(next_states)
-            #target 신경망은 업데이트를 안함
-            target_predicts = tf.stop_gradient(target_predicts)
+            target_q = self.target_model(next_states)
+            # #target 신경망은 업데이트를 안함
+            target_q = tf.stop_gradient(target_q)
 
-            max_q = np.amax(target_predicts, axis = -1)
-            targets = rewards + (1 - dones) * self.discount_factor * max_q
+            LSE_max_q = np.log(tf.reduce_sum(tf.exp(target_q/self.l), axis= 1)+1e-5)*self.l
+            #max_q = np.max(target_q, axis=1)
+            targets = rewards + (1 - dones) * self.discount_factor * LSE_max_q
+            # loss = tf.reduce_mean(tf.square(targets - predicts))
             loss = tf.reduce_mean(tf.square(targets - predicts))
+
 
         grads = tape.gradient(loss, model_params)
         self.optimizer.apply_gradients(zip(grads, model_params))
@@ -162,7 +188,7 @@ def main():
     scores, episodes = [], []
     score_past100 = deque(maxlen=100)
 
-    num_episode = 300
+    num_episode = 2000
     avg_score = 0
     dirpath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
@@ -194,8 +220,11 @@ def main():
             state = next_state
 
             if done:
+                #if len(agent1.memory) >= agent1.train_start:
+                if e % 2 == 0:
+                    agent1.update_target_model()    
+
                 # 각 에피소드마다 타깃 모델을 모델의 가중치로 업데이트
-                agent1.update_target_model()
                 # 에피소드마다 학습 결과 출력
                 score_past100.append(score)
                 print("step: {:3d} | episode: {:3d} | score : {:3.2f} | memory length: {:4d} | epsilon: {:.4f}".format(
