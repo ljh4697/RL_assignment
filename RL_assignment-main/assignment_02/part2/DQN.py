@@ -64,7 +64,7 @@ class DQNAgent:
         self.train_start = 1000
 
         # replay memory size
-        self.memory = deque(maxlen=10000)
+        self.memory = deque(maxlen=3000)
 
         # make model, target_model
         self.model = DQN(action_size)
@@ -111,7 +111,7 @@ class DQNAgent:
             #target 신경망은 업데이트를 안함
             target_predicts = tf.stop_gradient(target_predicts)
 
-            max_q = np.amax(target_predicts, axis = -1)
+            max_q = np.amax(target_predicts, axis = 1)
             targets = rewards + (1 - dones) * self.discount_factor * max_q
             loss = tf.reduce_mean(tf.square(targets - predicts))
 
@@ -184,15 +184,15 @@ def main():
                 # 이동 평균이 180 이상일 때 종료
                 if avg_score > 180:
                     agent1.model.save_weights(dirpath + "/save_model/model", save_format="tf")
-                    plt.figure(figsize=(14,7))
+                    plt.figure(figsize=(10,5))
                     
-                    plt.subplot(211)
+                    plt.subplot(121)
                     plt.plot(episodes, scores, 'b', alpha=0.7)
                     plt.xlabel("episode")
                     plt.ylabel("scores")
                     plt.xlim([0, e])
 
-                    plt.subplot(212)
+                    plt.subplot(122)
                     plt.plot(range(100, e+1), avg_scores, 'r', alpha=0.7)
                     plt.xlabel("episode")
                     plt.ylabel("average scores")

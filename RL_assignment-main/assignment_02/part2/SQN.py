@@ -42,16 +42,7 @@ import matplotlib.pyplot as plt
 class DQN(tf.keras.Model):
     def __init__(self, action_size):
         super(DQN, self).__init__()
-    #     self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
-    #     self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
-    #     self.fc_out = Dense(action_size,
-    #                         kernel_initializer=RandomUniform(-1, 1))
-    
-    # def call(self, input):
-    #     x = self.fc1(input)
-    #     x = self.fc2(x)
-    #     q = self.fc_out(x)
-    #     return q
+
         self.fc1 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
         self.fc2 = Dense(24, activation='relu', kernel_initializer=RandomUniform(-1, 1))
         self.fc_out = Dense(action_size,
@@ -82,7 +73,7 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.batch_size = 500
         self.train_start = 1000
-        self.l = 0.5
+        self.l = 0.2
 
         # replay memory size
         self.memory = deque(maxlen=3000)
@@ -115,17 +106,19 @@ class DQNAgent:
             return random.randrange(self.action_size)
         else:
             q = np.array(self.model(state)[0])
-            q = np.array(q + 1e-5)
+            q = np.array(q)
             exp_q = np.exp(q/self.l)
-            if np.inf in exp_q:
-                return exp_q[0].index(np.inf)
             policy = exp_q/np.sum(exp_q)
-            if any(tf.math.is_nan(policy)):
-                return random.randrange(self.action_size)
             try:
                 return np.random.choice(self.action_size, 1, p=policy)[0]
             except:
                 return np.argmax(self.model(state)[0])
+
+            # if np.inf in exp_q:
+            #     return np.where(exp_q == np.inf)[0][0]
+            # if any(tf.math.is_nan(policy)):
+            #     return random.randrange(self.action_size)
+
 
     def get_action_stochastic2(self, state):
 
@@ -157,16 +150,16 @@ class DQNAgent:
         model_params = self.model.trainable_variables
         with tf.GradientTape() as tape:
             # predicts = self.model(states)
-            q = self.model(states)
-
+            predicts = self.model(states)
             one_hot_action = tf.one_hot(actions, self.action_size)
-            predicts = tf.reduce_sum(one_hot_action * q, axis=1)
+            predicts = tf.reduce_sum(one_hot_action * predicts, axis=1)
 
-            target_q = self.target_model(next_states)
+            target_predicts = self.target_model(next_states)
             # #target 신경망은 업데이트를 안함
-            target_q = tf.stop_gradient(target_q)
-
-            LSE_max_q = np.log(tf.reduce_sum(tf.exp(target_q/self.l), axis= 1)+1e-5)*self.l
+            target_predicts = tf.stop_gradient(target_predicts)
+            #LSE_max_q = tf.math.log(tf.reduce_sum(tf.exp(target_predicts/self.l), axis= 1))*self.l
+            
+            LSE_max_q = np.array(tf.reduce_logsumexp(target_predicts/self.l, axis=1)*self.l)
             #max_q = np.max(target_q, axis=1)
             targets = rewards + (1 - dones) * self.discount_factor * LSE_max_q
             # loss = tf.reduce_mean(tf.square(targets - predicts))
@@ -221,7 +214,7 @@ def main():
 
             if done:
                 #if len(agent1.memory) >= agent1.train_start:
-                if e % 2 == 0:
+                if e % 5 == 0:
                     agent1.update_target_model()    
 
                 # 각 에피소드마다 타깃 모델을 모델의 가중치로 업데이트

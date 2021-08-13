@@ -9,11 +9,15 @@ import tensorflow as tf
 
 
 
-q = np.array([44.35, 44.38])
-p = np.array(q + 1e-1)
-exp_q= np.exp(q/0.5)
-policy = exp_q/np.sum(exp_q)
+# q = np.array([44.35, 44.38])
+# p = np.array(q + 1e-1)
+# exp_q= np.exp(q/0.5)
+# policy = exp_q/np.sum(exp_q)
 #a = np.log(a + 1e-5)
 #print(type(a))
-print(policy),
-print(p)
+a = tf.constant([[2, 3], [5, 8], [31, 21]], float)
+
+LSE_max_q = tf.math.log(tf.reduce_sum(tf.exp(a/0.2), axis= 1))*0.2
+g = tf.reduce_logsumexp(a/0.2, axis=1)
+g = np.array(g)
+print(g)
