@@ -102,6 +102,7 @@ class DQNAgent:
 
         #train parameter
         model_params = self.model.trainable_variables
+
         with tf.GradientTape() as tape:
             predicts = self.model(states)
             one_hot_action = tf.one_hot(actions, self.action_size)
