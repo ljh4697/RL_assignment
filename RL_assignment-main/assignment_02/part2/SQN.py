@@ -92,17 +92,17 @@ class DQNAgent:
 
 
     def get_action_stochastic(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
-        else:
-            q = np.array(self.model(state)[0])
-            q = np.array(q)
-            exp_q = np.exp(q/self.l)
-            policy = exp_q/np.sum(exp_q)
-            try:
-                return np.random.choice(self.action_size, 1, p=policy)[0]
-            except:
-                return np.argmax(self.model(state)[0])
+        # if np.random.rand() <= self.epsilon:
+        #     return random.randrange(self.action_size)
+        # else:
+        q = np.array(self.model(state)[0])
+        q = np.array(q)
+        exp_q = np.exp(q/self.l)
+        policy = exp_q/np.sum(exp_q)
+        try:
+            return np.random.choice(self.action_size, 1, p=policy)[0]
+        except:
+            return np.argmax(self.model(state)[0])
 
 
 
@@ -122,8 +122,8 @@ class DQNAgent:
         self.memory.append((state, action, reward, next_state, done))
 
     def train_model(self):
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+        # if self.epsilon > self.epsilon_min:
+        #     self.epsilon *= self.epsilon_decay
 
         mini_batch = random.sample(self.memory, self.batch_size)
 
@@ -193,14 +193,14 @@ def main():
             # append replay memory
             agent1.append_sample_replay(state, action, reward, next_state, done)
 
-            if len(agent1.memory) >= agent1.train_start:
+            if len(agent1.memory) >= agent1.batch_size:
                 agent1.train_model()
             
             state = next_state
 
             if done:
                 #if len(agent1.memory) >= agent1.train_start:
-                if e % 5 == 0:
+                if len(agent1.memory) >= agent1.batch_size:
                     agent1.update_target_model()    
 
                 # 각 에피소드마다 타깃 모델을 모델의 가중치로 업데이트
