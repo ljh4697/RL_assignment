@@ -14,7 +14,7 @@ from tensorflow.keras.initializers import RandomUniform
 import math
 import matplotlib.pyplot as plt
 
-
+from tensorflow.keras.activations import softmax
 class critic_DNN(tf.keras.Model):
     def __init__(self, action_size):
         super(critic_DNN, self).__init__()
@@ -43,7 +43,7 @@ class actor_DNN(tf.keras.Model):
         return policy
 
 
-class A2Cagent:
+class A2C2a:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
@@ -122,6 +122,120 @@ class A2Cagent:
         self.critic_optimizer.apply_gradients(zip(critic_grads, critic_params))
 
 
+class A2C(tf.keras.Model):
+    def __init__(self, action_size):
+        super(A2C, self).__init__()
+        self.actor_fc = Dense(24, activation='relu')
+        self.actor_out = Dense(action_size, activation='softmax',
+                               kernel_initializer=RandomUniform(-1e-3, 1e-3))
+        self.critic_fc1 = Dense(24, activation='relu')
+        self.critic_fc2 = Dense(24, activation='relu')
+        self.critic_out = Dense(action_size,
+                                kernel_initializer=RandomUniform(-1e-3, 1e-3))
+
+    def call(self, x):
+        actor_x = self.actor_fc(x)
+        policy = self.actor_out(actor_x)
+
+        critic_x = self.critic_fc1(x)
+        critic_x = self.critic_fc2(critic_x)
+        value = self.critic_out(critic_x)
+        return policy, value
+
+
+# 카트폴 예제에서의 액터-크리틱(A2C) 에이전트
+class SAC:
+    def __init__(self, action_size):
+        self.render = False
+
+        # 행동의 크기 정의
+        self.action_size = action_size
+
+        # 액터-크리틱 하이퍼파라미터
+        self.discount_factor = 0.99
+        self.learning_rate = 0.001
+        self.batch_size = 500
+        self.lamb = 0.2
+
+        # replay memory 
+        self.memory = deque(maxlen=3000)
+
+
+
+
+        # 정책신경망과 가치신경망 생성
+        self.model = A2C(self.action_size)
+        self.target_model = A2C(self.action_size)
+        # 최적화 알고리즘 설정, 미분값이 너무 커지는 현상을 막기 위해 clipnorm 설정
+        self.optimizer = Adam(learning_rate=self.learning_rate, clipnorm=5.0)
+        self.update_target_model()
+    
+    def update_target_model(self):
+        self.target_model.set_weights(self.model.get_weights())
+        return
+    
+    def append_sample_replay(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+
+    # 정책신경망의 출력을 받아 확률적으로 행동을 선택
+    def get_action(self, state):
+        policy, _ = self.model(state)
+        policy = np.array(policy[0])
+        return np.random.choice(self.action_size, 1, p=policy)[0]
+
+    # 각 타임스텝마다 정책신경망과 가치신경망을 업데이트
+    def train_model(self):
+        mini_batch = random.sample(self.memory, self.batch_size)
+
+        states = np.array([sample[0][0] for sample in mini_batch])
+        actions = np.array([sample[1] for sample in mini_batch])
+        rewards = np.array([sample[2] for sample in mini_batch])
+        next_states = np.array([sample[3][0] for sample in mini_batch])
+        dones = np.array([sample[4] for sample in mini_batch])
+
+        model_params = self.model.trainable_variables
+        with tf.GradientTape() as tape:
+            tape.watch(model_params)
+
+            policies, q_value = self.model(states)
+            one_hot_action = tf.one_hot(actions, self.action_size)
+            q_predicts = tf.reduce_sum(one_hot_action*q_value, axis=1)
+
+            _, next_q_value = self.target_model(next_states)
+            __, t_q_value = self.target_model(states)
+
+
+            next_actions = self.get_action(next_states)
+            one_hot_next_action = tf.one_hot(next_actions, self.action_size)
+            next_q_value = tf.reduce_sum(one_hot_next_action*next_q_value, axis=1)
+
+            targets = rewards + (1 - dones) * self.discount_factor * (next_q_value+ self.lamb*tf.reduce_sum(-policies*tf.math.log(policies + 1e-5)))
+
+            # 가치 신경망 오류 함수 구하기
+            critic_loss = 0.5 * tf.square(tf.stop_gradient(targets) - q_predicts)
+            critic_loss = tf.reduce_mean(critic_loss)
+
+            # 정책 신경망 오류 함수 구하기
+            exp_t_q_value = np.exp(t_q_value/self.lamb)
+            softmax_q_lambda = tf.nn.softmax(exp_t_q_value, axis=1)
+            softmax_q_lambda = tf.stop_gradient(softmax_q_lambda)
+
+
+            kl = tf.keras.losses.KLDivergence()
+            #actor_loss = tf.reduce_mean(kl(policies, softmax_q_lambda))
+            actor_loss = kl(policies, softmax_q_lambda)
+
+
+
+            # 하나의 오류 함수로 만들기
+            loss = actor_loss + critic_loss
+
+        # 오류함수를 줄이는 방향으로 모델 업데이트
+        grads = tape.gradient(loss, model_params)
+        self.optimizer.apply_gradients(zip(grads, model_params))
+        return np.array(loss)
+
+
 
 
 
@@ -131,7 +245,7 @@ def main():
 
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
-    agent = A2Cagent(state_size, action_size)
+    agent = SAC(action_size)
 
     scores, episodes = [], []
     score_past100 = deque(maxlen=100)
@@ -160,14 +274,17 @@ def main():
             score += reward
             reward = 0.1 if not done or score == 200 else -1
 
-            agent.train_model(state, action, reward, next_state, done)
+            agent.append_sample_replay(state, action, reward, next_state, done)
+            if len(agent.memory) >= agent.batch_size:
+                agent.train_model()
 
             state = next_state
            
             if done:
-                agent.update_target_model()
+                if len(agent.memory) >= agent.batch_size:
+                    agent.update_target_model()
                 score_past100.append(score)
-                print("episode: {:3d} | score: {:3.2f} |loss: {:3.2f} ".format(e, score, loss))
+                print("episode: {:3d} | score: {:3.2f} | memory length: {:4d}  ".format(e, score, len(agent.memory)))
                 scores.append(score) ; episodes.append(e)
                 if len(score_past100) ==100:
                     avg_score = np.mean(score_past100)
@@ -176,66 +293,6 @@ def main():
                 
 
                     
-
-
-
-            
-
-
-#REINFORCE code
-class Critic:
-    def __init__(self, state_size, action_size):
-        self.state_size = state_size
-        self.action_size = action_size
-
-        #hyper parameter#
-        self.discount_factor = 0.99
-        self.learning_rate = 0.01
-
-        self.model = DNN(self.action_size)
-        self.optimizer = Adam(learning_rate=self.learning_rate)
-        self.states, self.actions, self.rewards = [], [], []
-
-    def get_action(self, state):
-        policy = self.model(state)[0]
-        policy = np.array(policy)
-        return np.random.choice(self.action_size, 1, p=policy)[0]
-
-    def discount_rewards(self, rewards):
-        discounted_rewards = np.zeros_like(rewards)
-        running_add = 0
-        for t in reversed(range(0, len(rewards))):
-            running_add = running_add * self.discount_factor + rewards[t]
-            discounted_rewards[t] = running_add
-        return discounted_rewards
-
-    def append_sample(self, state, action, reward):
-
-        self.states.append(state[0])
-        self.rewards.append(reward)
-        act = np.zeros(self.action_size)
-        act[action] = 1
-        self.actions.append(act)
-
-    def train_model(self, state, action, reward, next_state, done):
-        discounted_rewards = np.float32(self.discount_rewards(self.rewards))
-        
-        model_params = self.model.trainable_variables
-        with tf.GradientTape() as tape:
-            tape.watch(model_params)
-            policies = self.model(np.array(self.states))
-            actions = np.array(self.actions)
-            action_prob = tf.reduce_sum(actions * policies, axis=1)
-            cross_entropy = -tf.math.log(action_prob + 1e-5)
-            loss = tf.reduce_sum(cross_entropy * discounted_rewards)
-            entropy =  - policies * tf.math.log(policies)
-
-        grads = tape.gradient(loss, model_params)
-        self.optimizer.apply_gradients(zip(grads, model_params))
-        self.states, self.actions, self.rewards = [], [], []
-        return np.mean(entropy)
-
-
 
             
             

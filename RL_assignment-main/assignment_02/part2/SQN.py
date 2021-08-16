@@ -92,13 +92,14 @@ class DQNAgent:
 
 
     def get_action_stochastic(self, state):
-        # if np.random.rand() <= self.epsilon:
-        #     return random.randrange(self.action_size)
-        # else:
+
         q = np.array(self.model(state)[0])
-        q = np.array(q)
-        exp_q = np.exp(q/self.l)
-        policy = exp_q/np.sum(exp_q)
+        #q = np.array(q)
+        #exp_q = np.exp(q/self.l)
+        exp_q = tf.math.exp(q/self.l)
+        policy = tf.nn.softmax(exp_q)
+        policy = np.array(policy)
+        #return np.random.choice(self.action_size, 1, p=policy)[0]
         try:
             return np.random.choice(self.action_size, 1, p=policy)[0]
         except:
