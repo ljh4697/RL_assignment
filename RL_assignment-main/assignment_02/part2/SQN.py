@@ -107,17 +107,6 @@ class DQNAgent:
 
 
 
-
-    def get_action_stochastic2(self, state):
-
-        q = self.target_model(state)[0]
-        q = np.array(q)
-        exp_q = np.exp(q/self.l)
-        if np.inf in exp_q:
-            return exp_q[0].index(np.inf)
-        policy = exp_q/np.sum(exp_q)
-        return np.random.choice(self.action_size, 1, p=policy)[0]
-
         
     def append_sample_replay(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
