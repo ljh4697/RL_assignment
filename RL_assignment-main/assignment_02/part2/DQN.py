@@ -159,7 +159,7 @@ def main():
             # append replay memory
             agent1.append_sample_replay(state, action, reward, next_state, done)
 
-            if len(agent1.memory) >= agent1.train_start:
+            if len(agent1.memory) >= agent1.batch_size:
                 agent1.train_model()
             
             state = next_state

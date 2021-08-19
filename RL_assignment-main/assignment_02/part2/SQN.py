@@ -94,16 +94,9 @@ class DQNAgent:
     def get_action_stochastic(self, state):
 
         q = np.array(self.model(state)[0])
-        #q = np.array(q)
-        #exp_q = np.exp(q/self.l)
-        exp_q = tf.math.exp(q/self.l)
-        policy = tf.nn.softmax(exp_q)
+        policy = tf.nn.softmax(q/self.l)
         policy = np.array(policy)
-        #return np.random.choice(self.action_size, 1, p=policy)[0]
-        try:
-            return np.random.choice(self.action_size, 1, p=policy)[0]
-        except:
-            return np.argmax(self.model(state)[0])
+        return np.random.choice(self.action_size, 1, p=policy)[0]
 
 
 
@@ -112,8 +105,7 @@ class DQNAgent:
         self.memory.append((state, action, reward, next_state, done))
 
     def train_model(self):
-        # if self.epsilon > self.epsilon_min:
-        #     self.epsilon *= self.epsilon_decay
+
 
         mini_batch = random.sample(self.memory, self.batch_size)
 

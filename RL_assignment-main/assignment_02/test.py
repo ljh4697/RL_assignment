@@ -4,8 +4,11 @@ import pylab
 import numpy as np
 import tensorflow as tf
 
-a = [[1, 2, 3], [4, 5, 6]]
-a = np.array(a, float)
-a= tf.nn.softmax(a, axis=1)
-print(a)
+a = np.array([[2, 2], [3, 3]])
+a = tf.constant(a)
+
+print(a*a)
+print(tf.reduce_sum(a*a))
+print(tf.reduce_sum(a*a, axis=1))
+
 

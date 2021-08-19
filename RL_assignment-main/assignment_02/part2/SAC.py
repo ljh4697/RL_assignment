@@ -43,7 +43,7 @@ class actor_DNN(tf.keras.Model):
         return policy
 
 
-class A2C2a:
+class SACa:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
@@ -122,12 +122,14 @@ class A2C2a:
         self.critic_optimizer.apply_gradients(zip(critic_grads, critic_params))
 
 
-class A2C(tf.keras.Model):
+class SAC_DNN(tf.keras.Model):
     def __init__(self, action_size):
-        super(A2C, self).__init__()
+        super(SAC_DNN, self).__init__()
         self.actor_fc = Dense(24, activation='relu')
         self.actor_out = Dense(action_size, activation='softmax',
                                kernel_initializer=RandomUniform(-1e-3, 1e-3))
+
+
         self.critic_fc1 = Dense(24, activation='relu')
         self.critic_fc2 = Dense(24, activation='relu')
         self.critic_out = Dense(action_size,
@@ -143,7 +145,7 @@ class A2C(tf.keras.Model):
         return policy, value
 
 
-# 카트폴 예제에서의 액터-크리틱(A2C) 에이전트
+# 카트폴 예제에서의 액터-크리틱(SAC_DNN) 에이전트
 class SAC:
     def __init__(self, action_size):
         self.render = False
@@ -164,8 +166,8 @@ class SAC:
 
 
         # 정책신경망과 가치신경망 생성
-        self.model = A2C(self.action_size)
-        self.target_model = A2C(self.action_size)
+        self.model = SAC_DNN(self.action_size)
+        self.target_model = SAC_DNN(self.action_size)
         # 최적화 알고리즘 설정, 미분값이 너무 커지는 현상을 막기 위해 clipnorm 설정
         self.optimizer = Adam(learning_rate=self.learning_rate, clipnorm=5.0)
         self.update_target_model()
@@ -209,15 +211,14 @@ class SAC:
             one_hot_next_action = tf.one_hot(next_actions, self.action_size)
             next_q_value = tf.reduce_sum(one_hot_next_action*next_q_value, axis=1)
 
-            targets = rewards + (1 - dones) * self.discount_factor * (next_q_value+ self.lamb*tf.reduce_sum(-policies*tf.math.log(policies + 1e-5)))
+            targets = rewards + (1 - dones) * self.discount_factor * (next_q_value + self.lamb*tf.reduce_sum(-policies*tf.math.log(policies + 1e-5), axis=1))
 
             # 가치 신경망 오류 함수 구하기
             critic_loss = 0.5 * tf.square(tf.stop_gradient(targets) - q_predicts)
             critic_loss = tf.reduce_mean(critic_loss)
 
             # 정책 신경망 오류 함수 구하기
-            exp_t_q_value = np.exp(t_q_value/self.lamb)
-            softmax_q_lambda = tf.nn.softmax(exp_t_q_value, axis=1)
+            softmax_q_lambda = tf.nn.softmax(t_q_value/self.lamb, axis=1)
             softmax_q_lambda = tf.stop_gradient(softmax_q_lambda)
 
 
@@ -281,7 +282,7 @@ def main():
             state = next_state
            
             if done:
-                if len(agent.memory) >= agent.batch_size:
+                if len(agent.memory) >= agent.batch_size and e % 2 == 0:
                     agent.update_target_model()
                 score_past100.append(score)
                 print("episode: {:3d} | score: {:3.2f} | memory length: {:4d}  ".format(e, score, len(agent.memory)))
