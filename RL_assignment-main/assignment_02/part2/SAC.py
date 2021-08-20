@@ -289,7 +289,29 @@ def main():
                 scores.append(score) ; episodes.append(e)
                 if len(score_past100) ==100:
                     avg_score = np.mean(score_past100)
-                    print(avg_score)
+                    print(f"past 100 average score: {avg_score}")
+                
+
+                if avg_score > 180 or e == num_episode-1:
+                    agent.model.save_weights(dirpath +"/save_model/sac_model", save_format="tf")
+
+                    plt.figure(figsize=(10,5))
+
+                    plt.subplot(121)
+                    plt.plot(episodes, scores, 'b', alpha=0.7)
+                    plt.xlabel("episodes")
+                    plt.ylabel("scores")
+                    plt.xlim([0, e])
+
+                    plt.subplot(122)
+                    plt.plot(range(100, e+1), avg_score, 'r' , alpha=0.7)
+                    plt.xlabel("episodes")
+                    plt.ylabel("average scores")
+                    plt.xlim([0, e])
+
+                    plt.savefig(dirpath + "/save_graph/sac_graph.png")
+                    plt.show()
+                    sys.exit()
 
                 
 

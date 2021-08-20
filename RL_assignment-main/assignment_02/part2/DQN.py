@@ -183,7 +183,7 @@ def main():
 
 
                 # 이동 평균이 180 이상일 때 종료
-                if avg_score > 180:
+                if avg_score > 180 or e == num_episode-1:
                     agent1.model.save_weights(dirpath + "/save_model/model", save_format="tf")
                     plt.figure(figsize=(10,5))
                     
