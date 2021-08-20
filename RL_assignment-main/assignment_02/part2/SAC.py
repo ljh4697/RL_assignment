@@ -203,7 +203,8 @@ class SAC:
             one_hot_action = tf.one_hot(actions, self.action_size)
             q_predicts = tf.reduce_sum(one_hot_action*q_value, axis=1)
 
-            _, next_q_value = self.target_model(next_states)
+            next_policies, ____ = self.model(next_states)
+            ___, next_q_value = self.target_model(next_states)
             __, t_q_value = self.target_model(states)
 
 
@@ -211,7 +212,7 @@ class SAC:
             one_hot_next_action = tf.one_hot(next_actions, self.action_size)
             next_q_value = tf.reduce_sum(one_hot_next_action*next_q_value, axis=1)
 
-            targets = rewards + (1 - dones) * self.discount_factor * (next_q_value + self.lamb*tf.reduce_sum(-policies*tf.math.log(policies + 1e-5), axis=1))
+            targets = rewards + (1 - dones) * self.discount_factor * (next_q_value + self.lamb*tf.reduce_sum(-next_policies*tf.math.log(next_policies + 1e-5), axis=1))
 
             # 가치 신경망 오류 함수 구하기
             critic_loss = 0.5 * tf.square(tf.stop_gradient(targets) - q_predicts)
@@ -223,7 +224,6 @@ class SAC:
 
 
             kl = tf.keras.losses.KLDivergence()
-            #actor_loss = tf.reduce_mean(kl(policies, softmax_q_lambda))
             actor_loss = kl(policies, softmax_q_lambda)
 
 
@@ -282,7 +282,7 @@ def main():
             state = next_state
            
             if done:
-                if len(agent.memory) >= agent.batch_size and e % 2 == 0:
+                if len(agent.memory) >= agent.batch_size:
                     agent.update_target_model()
                 score_past100.append(score)
                 print("episode: {:3d} | score: {:3.2f} | memory length: {:4d}  ".format(e, score, len(agent.memory)))
